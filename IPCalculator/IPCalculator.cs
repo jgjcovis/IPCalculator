@@ -1,11 +1,17 @@
-﻿using System.Net;
+﻿using IPCalculator.Core;
+using System.Net;
 
 namespace IPCalculatorNS
 {
     public partial class IPCalculator : Form
     {
+        private readonly INetworkInfoCalculator calculatorCore;
+        private readonly IIPConverter converter;
+
         public IPCalculator()
         {
+            this.converter = new IPConverter();
+            this.calculatorCore = new NetworkInfoCalculator(converter);
             InitializeComponent();
             DarkMode();
         }
@@ -70,9 +76,9 @@ namespace IPCalculatorNS
         private void UpdateBinaryTextBoxes()
         {
             string ipAddress = String.Join(".", ipTextBox1.Text, ipTextBox2.Text, ipTextBox3.Text, ipTextBox4.Text);
-            if (IPAddress.TryParse(ipAddress, out IPAddress? ip))
+            if (IPAddress.TryParse(ipAddress, out _))
             {
-                string[] octets = IPCalculatorCore.ConvertToBinary(ipAddress).Split(".");
+                string[] octets = this.converter.ToBinary(ipAddress).Split(".");
 
                 binaryTextBox1.Text = octets[0];
                 binaryTextBox2.Text = octets[1];
@@ -87,7 +93,7 @@ namespace IPCalculatorNS
             string noDots = string.Join("", binaryIPAddress.Split("."));
             if (System.Text.RegularExpressions.Regex.IsMatch(noDots, "^[01]{32}$"))
             {
-                string[] segments = IPCalculatorCore.ConvertBinaryToIP(binaryIPAddress).Split(".");
+                string[] segments = converter.ToIP(binaryIPAddress).Split(".");
 
                 ipTextBox1.Text = segments[0];
                 ipTextBox2.Text = segments[1];
@@ -101,7 +107,7 @@ namespace IPCalculatorNS
             string ipAddress = String.Join(".", ipTextBox1.Text, ipTextBox2.Text, ipTextBox3.Text, ipTextBox4.Text);
             if (IPAddress.TryParse(ipAddress, out IPAddress? ip))
             {
-                NetworkInfo addresses = IPCalculatorCore.Calculate(ipAddress, subnetSlider.Value);
+                NetworkInfo addresses = calculatorCore.Calculate(ipAddress, subnetSlider.Value);
 
                 this.networkInfoBindingSource.DataSource = addresses;
 
